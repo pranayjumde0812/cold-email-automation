@@ -6,12 +6,12 @@ import path from "path";
 
 dotenv.config();
 
-// ✅ Check env variables
+// ✅ Check environment variables
 if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-  throw new Error("Missing EMAIL_USER or EMAIL_PASS in .env");
+  throw new Error("Missing EMAIL_USER or EMAIL_PASS in .env file");
 }
 
-// ✅ Verify resume file exists
+// ✅ Resume file path
 const resumePath = path.resolve(
   process.cwd(),
   "Pranay-Jumde-Java-Developer.pdf",
@@ -21,7 +21,7 @@ if (!fs.existsSync(resumePath)) {
   throw new Error("Resume file not found in project root");
 }
 
-// ✅ Create transporter
+// ✅ Create email transporter
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -30,8 +30,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Optional: Verify connection
-transporter.verify((error, success) => {
+// ✅ Verify email connection
+transporter.verify((error) => {
   if (error) {
     console.error("❌ Email configuration error:", error);
   } else {
@@ -39,59 +39,79 @@ transporter.verify((error, success) => {
   }
 });
 
+// ✅ CSV Row Interface
 interface EmailRow {
-  name: string;
-  email: string;
-  company: string;
+  SNo: string;
+  Name: string;
+  Email: string;
+  Title: string;
+  Company: string;
 }
 
+// ⏳ Delay function
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
+// ✅ Send Email Function
 const sendEmail = async (row: EmailRow) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: row.email.trim(),
-    subject: `Backend Developer | Node.js + TypeScript`,
+    to: row.Email.trim(),
+    subject: `Application for Java Backend Developer Role`,
     html: `
-      <p>Hi ${row.name.trim()},</p>
+      <p>Dear ${row.Name.trim()},</p>
 
-      <p>I’m a Backend Developer with experience in 
-      <b>Node.js, TypeScript, PostgreSQL, Redis, and Docker</b>.</p>
+      <p>I hope you are doing well.</p>
 
-      <p>I would love to explore backend opportunities at 
-      <b>${row.company.trim()}</b>.</p>
+      <p>I am a <b>Java Backend Developer</b> with <b>1.5 years of experience</b> in building scalable backend applications using 
+      <b>Core Java, Spring Boot, REST APIs, and Microservices</b>.</p>
 
-      <p>Please find my resume attached.</p>
+      <p>I am currently exploring new opportunities and would be glad to contribute to 
+      <b>${row.Company.trim()}</b> if there are any suitable roles aligned with my profile.</p>
 
-      <p>Best regards,<br/>
-      <b>Pranay Jumde</b></p>
+      <p>I have hands-on experience working with databases, Git, and basic AWS services, and have collaborated within agile teams to deliver reliable backend solutions.</p>
+
+      <p>Please find my resume attached for your review. I would be happy to provide any additional information if required.</p>
+
+      <p>
+        Thank you for your time and consideration.<br/><br/>
+
+        Warm regards,<br/>
+        <b>Pranay Jumde</b><br/>
+        Java Backend Developer<br/>
+        📞 +91-9657963378<br/>
+        📧 pranayjumde13@gmail.com<br/>
+        🔗 <a href="https://www.linkedin.com/in/pranay-jumde/">LinkedIn Profile</a>
+      </p>
     `,
     attachments: [
       {
-        filename: "Pranay_Jumde_Resume.pdf",
+        filename: "Pranay_Jumde_Java_Developer_Resume.pdf",
         path: resumePath,
       },
     ],
   };
 
   await transporter.sendMail(mailOptions);
-  console.log(`✅ Sent to ${row.email}`);
+  console.log(`✅ Sent to ${row.SNo} - ${row.Email} - ${row.Name} at ${row.Company}`);
 };
 
-// ✅ Check CSV exists
+// ✅ Check CSV file exists
 if (!fs.existsSync("emails.csv")) {
   throw new Error("emails.csv file not found in project root");
 }
 
 const emails: EmailRow[] = [];
 
+// ✅ Read CSV
 fs.createReadStream("emails.csv")
   .pipe(csv())
   .on("data", (row) => {
     emails.push({
-      name: row.name,
-      email: row.email,
-      company: row.company,
+      SNo: row.SNo,
+      Name: row.Name,
+      Email: row.Email,
+      Title: row.Title,
+      Company: row.Company,
     });
   })
   .on("end", async () => {
@@ -101,10 +121,10 @@ fs.createReadStream("emails.csv")
       try {
         await sendEmail(row);
 
-        // ✅ 30 sec delay to avoid spam detection
+        // ⏳ 30 sec delay to reduce spam risk
         await delay(30000);
       } catch (err) {
-        console.error(`❌ Failed for ${row.email}`, err);
+        console.error(`❌ Failed for ${row.Email}`, err);
       }
     }
 
